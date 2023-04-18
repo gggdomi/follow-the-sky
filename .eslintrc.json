@@ -1,0 +1,46 @@
+{
+   "parser": "@typescript-eslint/parser",
+   "extends": ["plugin:@typescript-eslint/recommended", "prettier"],
+   "root": true,
+   "parserOptions": {
+      "ecmaVersion": 2018,
+      "sourceType": "module",
+      "project": "./tsconfig.json"
+   },
+   "rules": {
+      "semi": "off",
+      // https://typescript-eslint.io/rules/no-misused-promises
+      "@typescript-eslint/no-misused-promises": ["error", { "checksVoidReturn": false }],
+      // https://typescript-eslint.io/rules/require-await
+      "require-await": "off",
+      "@typescript-eslint/require-await": "error",
+      // https://typescript-eslint.io/rules/no-floating-promises
+      "@typescript-eslint/no-floating-promises": "error",
+      // https://typescript-eslint.io/rules/await-thenable
+      "@typescript-eslint/await-thenable": "error",
+      // avoid errors due to empty strings and 0 values
+      "@typescript-eslint/no-non-null-assertion": "off",
+
+      "@typescript-eslint/no-inferrable-types": "off", // explicit types are sometimes usefull.
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/ban-types": "off",
+      "@typescript-eslint/ban-ts-comment": "off",
+      "no-return-await": "error",
+      "@typescript-eslint/return-await": ["error", "in-try-catch"],
+      "@typescript-eslint/no-use-before-define": "off",
+      "@typescript-eslint/no-unnecessary-type-constraint": "off",
+      "@typescript-eslint/no-empty-function": "off",
+      "@typescript-eslint/no-var-requires": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "@typescript-eslint/no-this-alias": "off",
+      "consistent-this": [2, "self", "that"],
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/ban-ts-ignore": "off",
+      "@typescript-eslint/no-empty-interface": "off",
+      "@typescript-eslint/interface-name-prefix": "off",
+      "@typescript-eslint/class-name-casing": "off",
+      "@typescript-eslint/member-delimiter-style": "off",
+      "@typescript-eslint/camelcase": "off",
+      "@typescript-eslint/semi": ["error", "never"]
+   }
+}
