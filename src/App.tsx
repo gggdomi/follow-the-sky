@@ -1,11 +1,12 @@
-import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import { Container, Header, Content, Footer, Col, Row } from 'rsuite'
 import 'rsuite/dist/rsuite.min.css'
+import { observer } from 'mobx-react-lite'
+import { useSt } from './St.ctx'
 
-function App() {
-   const [count, setCount] = useState(0)
+export const App = observer(function App_(p: {}) {
+   const st = useSt()
 
    return (
       <Container>
@@ -26,7 +27,7 @@ function App() {
                   </div>
                   <h1>Vite + React</h1>
                   <div className='card'>
-                     <button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
+                     <button onClick={() => st.incr()}>count is {st.count}</button>
                      <p>
                         Edit <code>src/App.tsx</code> and save to test HMR
                      </p>
@@ -41,6 +42,4 @@ function App() {
          <Footer>Footer</Footer>
       </Container>
    )
-}
-
-export default App
+})
