@@ -1,6 +1,7 @@
 import { BskyAgent } from '@atproto/api'
-import { makeAutoObservable } from 'mobx'
+import { makeAutoObservable, runInAction } from 'mobx'
 import { Notification } from 'rsuite'
+import Papa from 'papaparse'
 
 export class St {
    constructor() {
@@ -72,6 +73,82 @@ export class St {
    clearCache() {
       sessionStorage.clear()
       this.credentialsSaved = false
+   }
+
+   /** UPLOAD */
+   uploadError?: string
+   uploadSaved: boolean = false
+   csvContent?: string
+   onDrop = (e: React.DragEvent<HTMLElement>) => {
+      // this.uploadState = 'file dropped'
+      // this.uploadPending = true
+      e.preventDefault()
+      const file = e.dataTransfer.files[0]!
+      const encoding = 'UTF-8'
+      const reader = new FileReader()
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+         try {
+            runInAction(() => {
+               const csvContent: string | ArrayBuffer | null | undefined = e.target?.result
+               if (typeof csvContent !== 'string') throw new Error('invalid file parse result')
+               this.csvContent = csvContent
+               sessionStorage.setItem(`${prefix}csvContent`, csvContent)
+               this.uploadSaved = true
+               this.uploadError = undefined
+            })
+         } catch (e: any) {
+            this.uploadError = e.message
+         }
+         this.parseCsv()
+      }
+      reader.readAsText(file, encoding)
+   }
+
+   loadCsv() {
+      const csvContent = sessionStorage.getItem(`${prefix}csvContent`)
+      if (csvContent) {
+         this.csvContent = csvContent
+         this.uploadSaved = true
+         this.parseCsv()
+      }
+   }
+
+   parseError?: string
+   parsed: boolean = false
+   parsedData?: any[]
+   parseCsv() {
+      if (!this.csvContent) {
+         this.parseError = 'no csv content'
+         return
+      }
+
+      try {
+         const res = Papa.parse(this.csvContent, { header: true, delimiter: ',' })
+         const importantErrors = res.errors.filter((e) => e.code !== 'TooFewFields') // csv from twtdata doesn't completely fill the rows if no pinned tweet 🤷🏻‍♂️
+         if (importantErrors.length > 0) {
+            this.parseError = `${importantErrors.length} errors in csv, see console`
+            console.log('❌ errors during parsing:', importantErrors)
+         } else this.parseError = undefined
+         this.parsed = true
+         this.parsedData = res.data
+      } catch (e: any) {
+         this.parseError = e.message
+         this.parsed = false
+         this.parsedData = []
+      }
+   }
+
+   get rowsCount() {
+      return this.parsedData?.length || 0
+   }
+
+   clearUpload() {
+      sessionStorage.removeItem(`${prefix}csvContent`)
+      this.csvContent = undefined
+      this.uploadSaved = false
+      this.parseError = undefined
+      this.parsed = false
+      this.parsedData = undefined
    }
 }
 

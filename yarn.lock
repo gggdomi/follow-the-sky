@@ -353,6 +353,18 @@
   resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.194.tgz#b71eb6f7a0ff11bff59fc987134a093029258a76"
   integrity sha512-r22s9tAS7imvBt2lyHC9B8AGwWnXaYb1tY09oyLkXDs4vArpYJzw09nj8MLx5VfciBPGIb+ZwG0ssYnEPJxn/g==
 
+"@types/node@*":
+  version "18.15.12"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.15.12.tgz#833756634e78c829e1254db006468dadbb0c696b"
+  integrity sha512-Wha1UwsB3CYdqUm2PPzh/1gujGCNtWVUYF0mB00fJFoR4gTyWTDPjSm+zBF787Ahw8vSGgBja90MkgFwvB86Dg==
+
+"@types/papaparse@^5.3.7":
+  version "5.3.7"
+  resolved "https://registry.yarnpkg.com/@types/papaparse/-/papaparse-5.3.7.tgz#8d3bf9e62ac2897df596f49d9ca59a15451aa247"
+  integrity sha512-f2HKmlnPdCvS0WI33WtCs5GD7X1cxzzS/aduaxSu3I7TbhWlENjSPs6z5TaB9K0J+BH1jbmqTaM+ja5puis4wg==
+  dependencies:
+    "@types/node" "*"
+
 "@types/prop-types@*", "@types/prop-types@^15.7.5":
   version "15.7.5"
   resolved "https://registry.yarnpkg.com/@types/prop-types/-/prop-types-15.7.5.tgz#5f19d2b85a98e9558036f6a3cacc8819420f05cf"

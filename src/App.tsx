@@ -31,6 +31,62 @@ export const App = observer(function App_(p: {}) {
                   <h2>1. Login</h2>
                   <LoginForm />
                </Stack>
+
+               <Stack direction='column' spacing={10}>
+                  <h2>2. Upload Friends List</h2>
+
+                  <Stack.Item alignSelf='stretch'>
+                     <Panel
+                        style={{
+                           maxWidth: 600,
+                           marginLeft: 'auto',
+                           marginRight: 'auto',
+                           background: 'var(--rs-message-info-bg)',
+                        }}
+                        header={<strong>How to download following list from twtdata.com?</strong>}
+                        collapsible
+                     >
+                        TODO
+                     </Panel>
+                  </Stack.Item>
+                  <Message type={st.csvContent == null ? 'info' : 'success'}>
+                     <Stack spacing={20}>
+                        <Button
+                           className='dropzone'
+                           appearance='primary'
+                           as='div'
+                           size='lg'
+                           tabIndex={-1}
+                           onDrop={(e) => st.onDrop(e)}
+                           onClick={() => {}} // 🔶 TODO
+                           onDragOver={(e) => e.preventDefault()} // 🔶 this could set/unset a state
+                           onDragLeave={(e) => e.preventDefault()}
+                        >
+                           Drop your following list from twtdata.com here
+                        </Button>
+                        {st.csvContent != null && (
+                           <>
+                              <div>✅ CSV content loaded</div>
+                              {st.parsedData != null && (
+                                 <div>
+                                    ✅ found <strong>{st.rowsCount}</strong> followers in file
+                                 </div>
+                              )}
+                              {st.parseError != null && (
+                                 <div>
+                                    ❌ <strong>{st.parseError}</strong>
+                                 </div>
+                              )}
+                           </>
+                        )}
+                        {st.csvContent != null && (
+                           <Button size='sm' onClick={() => st.clearUpload()} appearance='subtle'>
+                              Clear file
+                           </Button>
+                        )}
+                     </Stack>
+                  </Message>
+               </Stack>
             </Stack>
          </Content>
          <Footer>Footer</Footer>

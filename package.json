@@ -18,6 +18,7 @@
       "rsuite": "^5.31.1"
    },
    "devDependencies": {
+      "@types/papaparse": "^5.3.7",
       "@types/react": "^18.0.28",
       "@types/react-dom": "^18.0.11",
       "@typescript-eslint/eslint-plugin": "^5.59.0",
