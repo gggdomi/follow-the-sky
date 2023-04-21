@@ -116,7 +116,7 @@ export class St {
 
    parseError?: string
    parsed: boolean = false
-   parsedData?: any[]
+   parsedData?: TwtDataRow[]
    parseCsv() {
       if (!this.csvContent) {
          this.parseError = 'no csv content'
@@ -124,7 +124,7 @@ export class St {
       }
 
       try {
-         const res = Papa.parse(this.csvContent, { header: true, delimiter: ',' })
+         const res = Papa.parse<TwtDataRow>(this.csvContent.trim(), { header: true, delimiter: ',' })
          const importantErrors = res.errors.filter((e) => e.code !== 'TooFewFields') // csv from twtdata doesn't completely fill the rows if no pinned tweet 🤷🏻‍♂️
          if (importantErrors.length > 0) {
             this.parseError = `${importantErrors.length} errors in csv, see console`
@@ -153,3 +153,17 @@ export class St {
    }
 }
 
+export type TwtDataRow = {
+   id: string
+   name: string
+   username: string
+   location: string
+   url: string
+   profile_image_url: string
+   description: string
+   verified: string
+   verified_type: string
+   followers_count: string
+   following_count: string
+   tweet_count: string
+}
