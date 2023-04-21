@@ -1,0 +1,13 @@
+.rdg.grid-wrapped .rdg-cell {
+   line-height: 1.4rem !important;
+   white-space: normal !important;
+}
+
+.grid-var-height {
+  grid-template-rows: 35px !important;
+  grid-auto-rows: max-content !important;
+
+}
+.grid-var-height .rdg-cell {
+    contain: none !important;
+}
