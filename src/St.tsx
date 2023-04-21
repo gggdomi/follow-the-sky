@@ -2,6 +2,7 @@ import { BskyAgent } from '@atproto/api'
 import { makeAutoObservable, runInAction } from 'mobx'
 import { Notification } from 'rsuite'
 import Papa from 'papaparse'
+import { Store } from './Store'
 
 export class St {
    constructor() {
@@ -17,7 +18,7 @@ export class St {
    /** LOGIN */
    password: string = ''
    loggedIn: boolean = false
-   wasLoggedIn: boolean = Boolean(sessionStorage.getItem(`${prefix}loggedIn`))
+   wasLoggedIn: boolean = Boolean(Store.get('loggedIn'))
    loginError?: string
    async login(toaster?: any) {
       this.agent = new BskyAgent({ service: this.service })
@@ -28,7 +29,7 @@ export class St {
          this.loggedIn = true
          this.loginError = undefined
          if (this.rememberCredentials) this.saveCredentialsLocally()
-         sessionStorage.setItem(`${prefix}loggedIn`, 'yes')
+         Store.set('loggedIn', 'true')
       } catch (e: any) {
          this.loginError = e.message
          this.logout()
@@ -44,7 +45,7 @@ export class St {
    logout() {
       this.loggedIn = false
       this.agent = undefined
-      sessionStorage.removeItem(`${prefix}loggedIn`)
+      Store.remove('loggedIn')
       this.clearCache()
    }
 
@@ -55,18 +56,18 @@ export class St {
    rememberCredentials: boolean = true
    credentialsSaved: boolean = false
    saveCredentialsLocally() {
-      sessionStorage.setItem(`${prefix}identifier`, this.identifier)
-      sessionStorage.setItem(`${prefix}password`, this.password)
-      sessionStorage.setItem(`${prefix}service`, this.service)
+      Store.set('identifier', this.identifier)
+      Store.set('password', this.password)
+      Store.set('service', this.service)
       this.credentialsSaved = true
    }
 
    loadCredentials() {
-      this.identifier = sessionStorage.getItem(`${prefix}identifier`) || ''
-      this.password = sessionStorage.getItem(`${prefix}password`) || ''
-      const storedService = sessionStorage.getItem(`${prefix}service`)
+      this.identifier = Store.get('identifier') || ''
+      this.password = Store.get('password') || ''
+      const storedService = Store.get('service')
       this.service = storedService || this.service
-      this.wasLoggedIn = sessionStorage.getItem(`${prefix}loggedIn`) != null
+      this.wasLoggedIn = Store.get('loggedIn') != null
       this.credentialsSaved = Boolean(this.password || this.identifier || storedService)
    }
 
@@ -92,7 +93,7 @@ export class St {
                const csvContent: string | ArrayBuffer | null | undefined = e.target?.result
                if (typeof csvContent !== 'string') throw new Error('invalid file parse result')
                this.csvContent = csvContent
-               sessionStorage.setItem(`${prefix}csvContent`, csvContent)
+               Store.set('csvContent', csvContent)
                this.uploadSaved = true
                this.uploadError = undefined
             })
@@ -105,7 +106,7 @@ export class St {
    }
 
    loadCsv() {
-      const csvContent = sessionStorage.getItem(`${prefix}csvContent`)
+      const csvContent = Store.get('csvContent')
       if (csvContent) {
          this.csvContent = csvContent
          this.uploadSaved = true
@@ -143,7 +144,7 @@ export class St {
    }
 
    clearUpload() {
-      sessionStorage.removeItem(`${prefix}csvContent`)
+      Store.remove('csvContent')
       this.csvContent = undefined
       this.uploadSaved = false
       this.parseError = undefined
@@ -152,4 +153,3 @@ export class St {
    }
 }
 
-const prefix = 'itfb-'
