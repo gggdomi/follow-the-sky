@@ -29,7 +29,7 @@ export class St {
          this.loggedIn = true
          this.loginError = undefined
          if (this.rememberCredentials) this.saveCredentialsLocally()
-         Store.set('loggedIn', 'true')
+         Store.set('loggedIn', true)
       } catch (e: any) {
          this.loginError = e.message
          this.logout()

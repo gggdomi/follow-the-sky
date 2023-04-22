@@ -5,7 +5,7 @@ export class Store {
       return JSON.parse(val)
    }
 
-   static set(key: StorageKeys, value: string) {
+   static set(key: StorageKeys, value: string | boolean | number | object) {
       localStorage.setItem(`${prefix}${key}`, JSON.stringify(value))
    }
 
@@ -18,5 +18,11 @@ export class Store {
    }
 }
 
-export type StorageKeys = 'loggedIn' | 'identifier' | 'password' | 'service' | 'csvContent'
+export type StorageKeys =
+   | 'loggedIn'
+   | 'identifier'
+   | 'password'
+   | 'service'
+   | 'csvContent'
+   | `profile-${string}`
 const prefix = 'itfb-'
