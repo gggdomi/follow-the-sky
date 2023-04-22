@@ -1,24 +1,27 @@
+import { Observer, observer } from 'mobx-react-lite'
+import type { Column } from 'react-data-grid'
+import DataGrid from 'react-data-grid'
+import 'react-data-grid/lib/styles.css'
 import {
-   Container,
-   Header,
-   Content,
-   Footer,
-   Col,
-   Row,
+   Avatar,
    Button,
    ButtonToolbar,
-   Form,
-   Panel,
    Checkbox,
+   Container,
+   Content,
+   Footer,
+   Form,
+   Loader,
    Message,
-   useToaster,
+   Panel,
    Stack,
-   Grid,
-   Placeholder,
+   useToaster,
 } from 'rsuite'
 import 'rsuite/dist/rsuite.min.css'
-import { observer } from 'mobx-react-lite'
+import './App.css'
+import { Person } from './Person'
 import { useSt } from './St.ctx'
+import { observableCols } from './grid.utils'
 
 export const App = observer(function App_(p: {}) {
    const st = useSt()
@@ -87,12 +90,54 @@ export const App = observer(function App_(p: {}) {
                      </Stack>
                   </Message>
                </Stack>
+
+               <Stack direction='column'>
+                  <h2>3. Follow</h2>
+                  <Stack.Item alignSelf='stretch'>
+                     <Panel>
+                        <DataGrid
+                           style={{ height: 800 }}
+                           columns={columns}
+                           rows={st.persons}
+                           rowKeyGetter={(row) => row.twitterId}
+                           className={'rdg-light grid-wrapped grid-var-height'}
+                           rowHeight={undefined}
+                           enableVirtualization={false}
+                        />
+                     </Panel>
+                  </Stack.Item>
+               </Stack>
             </Stack>
          </Content>
          <Footer>Footer</Footer>
       </Container>
    )
 })
+
+const columns_: Column<Person>[] = [
+   {
+      key: 'twitterPfp',
+      name: 'Avatar',
+      formatter: (val) => <Avatar src={val.row.twitterPfp} alt={val.row.twitterBio} />,
+   },
+   { key: 'twitterHandle', name: 'Username' },
+   { key: 'twitterBio', name: 'Description' },
+   {
+      key: 'bskyPfp',
+      name: 'Avatar',
+      formatter: (val) => {
+         const pfp = val.row.bskyPfp
+         if (val.row.bskyProfile === 'LOADING') return <Loader />
+         return <Avatar src={pfp} alt={val.row.bskyHandle} />
+      },
+   },
+   { key: 'bskyHandle', name: 'Username' },
+   { key: 'bskyDisplayName', name: 'Display Name' },
+   { key: 'bskyBio', name: 'Description' },
+   { key: 'actions', name: 'Follow' },
+] // satisfies ({ key: keyof Person | 'actions' } & Record<string, unknown>)[] // 🔶
+
+const columns = observableCols(columns_)
 
 export const LoginForm = observer(function LoginForm_(p: {}) {
    const st = useSt()

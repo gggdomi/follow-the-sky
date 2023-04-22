@@ -2,6 +2,7 @@ import { BskyAgent } from '@atproto/api'
 import { makeAutoObservable, runInAction } from 'mobx'
 import { Notification } from 'rsuite'
 import Papa from 'papaparse'
+import { Person } from './Person'
 import { Store } from './Store'
 
 export class St {
@@ -9,6 +10,7 @@ export class St {
       makeAutoObservable(this)
       this.loadCredentials()
       if (this.wasLoggedIn) void this.login()
+      this.loadCsv()
    }
 
    identifier: string = ''
@@ -150,6 +152,12 @@ export class St {
       this.parseError = undefined
       this.parsed = false
       this.parsedData = undefined
+   }
+
+   /** FOLLOW */
+   get persons() {
+      const unsorted = this.parsedData?.map((d) => new Person(this, d)) || []
+      return unsorted.slice().sort((a, b) => a.order.localeCompare(b.order))
    }
 }
 
