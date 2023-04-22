@@ -13,6 +13,7 @@ import {
    Form,
    Loader,
    Message,
+   Notification,
    Panel,
    Stack,
    useToaster,
@@ -26,6 +27,7 @@ import { observableCols } from './grid.utils'
 export const App = observer(function App_(p: {}) {
    const st = useSt()
 
+   if (st.hydrated == false) return <Loader />
    return (
       <Container>
          <Content>
@@ -52,7 +54,7 @@ export const App = observer(function App_(p: {}) {
                         TODO
                      </Panel>
                   </Stack.Item>
-                  <Message type={st.csvContent == null ? 'info' : 'success'}>
+                  <Message type={st.csvReady ? 'success' : 'info'}>
                      <Stack spacing={20}>
                         <Button
                            className='dropzone'
@@ -67,25 +69,21 @@ export const App = observer(function App_(p: {}) {
                         >
                            Drop your following list from twtdata.com here
                         </Button>
-                        {st.csvContent != null && (
+                        {st.csvReady && (
                            <>
                               <div>✅ CSV content loaded</div>
-                              {st.parsedData != null && (
+                              <div>
+                                 ✅ found <strong>{st.rowsCount}</strong> followers in file
+                              </div>
+                              {st.uploadError != null && (
                                  <div>
-                                    ✅ found <strong>{st.rowsCount}</strong> followers in file
+                                    ❌ <strong>{st.uploadError}</strong>
                                  </div>
                               )}
-                              {st.parseError != null && (
-                                 <div>
-                                    ❌ <strong>{st.parseError}</strong>
-                                 </div>
-                              )}
+                              <Button size='sm' onClick={() => st.clearUpload()} appearance='subtle'>
+                                 Clear file
+                              </Button>
                            </>
-                        )}
-                        {st.csvContent != null && (
-                           <Button size='sm' onClick={() => st.clearUpload()} appearance='subtle'>
-                              Clear file
-                           </Button>
                         )}
                      </Stack>
                   </Message>
@@ -95,15 +93,11 @@ export const App = observer(function App_(p: {}) {
                   <h2>3. Follow</h2>
                   <Stack.Item alignSelf='stretch'>
                      <Panel>
-                        <DataGrid
-                           style={{ height: 800 }}
-                           columns={columns}
-                           rows={st.persons}
-                           rowKeyGetter={(row) => row.twitterId}
-                           className={'rdg-light grid-wrapped grid-var-height'}
-                           rowHeight={undefined}
-                           enableVirtualization={false}
-                        />
+                        {st.loggedIn && st.csvReady ? (
+                           <FollowingGrid />
+                        ) : (
+                           '🔶 Log in & upload csv file to start'
+                        )}
                      </Panel>
                   </Stack.Item>
                </Stack>
@@ -116,6 +110,30 @@ export const App = observer(function App_(p: {}) {
 
 const columns_: Column<Person>[] = [
    {
+      key: 'actions',
+      name: 'Follow',
+      formatter: (val) => {
+         if (!val.row.ready) return
+         if (val.row.reloading) return <Loader />
+         if (val.row.followLoading) return <Loader color='blue' />
+
+         if (val.row.isFollowed)
+            return (
+               <Stack>
+                  <div>✅ Followed</div>
+                  <Button appearance='subtle' color='red' size='sm' onClick={() => val.row.unfollow()}>
+                     Unfollow
+                  </Button>
+               </Stack>
+            )
+         return (
+            <Button appearance='primary' color='green' size='sm' onClick={() => val.row.follow()}>
+               Follow
+            </Button>
+         )
+      },
+   },
+   {
       key: 'twitterPfp',
       name: 'Avatar',
       formatter: (val) => <Avatar src={val.row.twitterPfp} alt={val.row.twitterBio} />,
@@ -125,20 +143,37 @@ const columns_: Column<Person>[] = [
    {
       key: 'bskyPfp',
       name: 'Avatar',
-      formatter: (val) => {
-         const pfp = val.row.bskyPfp
-         if (val.row.bskyProfile === 'LOADING') return <Loader />
-         return <Avatar src={pfp} alt={val.row.bskyHandle} />
-      },
+      formatter: (val) => <Avatar src={val.row.bskyPfp} alt={val.row.bskyHandle} />,
    },
    { key: 'bskyHandle', name: 'Username' },
-   { key: 'bskyDisplayName', name: 'Display Name' },
+   {
+      key: 'bskyDisplayName',
+      name: 'Display Name',
+      formatter: (val) => {
+         if (val.row.loading) return <Loader />
+         if (val.row.failed) return '❌'
+         return val.row.bskyDisplayName
+      },
+   },
    { key: 'bskyBio', name: 'Description' },
-   { key: 'actions', name: 'Follow' },
 ] // satisfies ({ key: keyof Person | 'actions' } & Record<string, unknown>)[] // 🔶
 
 const columns = observableCols(columns_)
 
+export const FollowingGrid = observer(function FollowingGrid_(p: {}) {
+   const st = useSt()
+   return (
+      <DataGrid
+         style={{ minHeight: 800, height: '90vh' }}
+         columns={columns}
+         rows={st.persons}
+         rowKeyGetter={(row) => row.twitterId}
+         className={'rdg-light grid-wrapped grid-var-height'}
+         rowHeight={undefined}
+         enableVirtualization={false}
+      />
+   )
+})
 export const LoginForm = observer(function LoginForm_(p: {}) {
    const st = useSt()
    const toaster = useToaster()
@@ -190,7 +225,19 @@ export const LoginForm = observer(function LoginForm_(p: {}) {
             </Form.Group>
             <Form.Group>
                <ButtonToolbar>
-                  <Button appearance='primary' onClick={() => st.login(toaster)} disabled={!st.canLogin}>
+                  <Button
+                     appearance='primary'
+                     onClick={async () => {
+                        const error = await st.login()
+                        if (error) {
+                           void toaster?.push(
+                              <Notification type='error' header='error' closable>{error}</Notification>, // prettier-ignore
+                              { placement: 'bottomCenter' },
+                           )
+                        }
+                     }}
+                     disabled={!st.canLogin}
+                  >
                      Login
                   </Button>
                   <Checkbox
