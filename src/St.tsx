@@ -1,8 +1,9 @@
 import { AtpSessionData, BskyAgent } from '@atproto/api'
 import { makeAutoObservable, runInAction } from 'mobx'
 import Papa from 'papaparse'
-import { Person } from './Person'
+import { Person, TwtDataRow } from './Person'
 import { Store } from './Store'
+import { Notification } from 'rsuite'
 
 export class St {
    constructor() {
@@ -14,7 +15,7 @@ export class St {
    async tryToHydrate() {
       if (Store.get('session') == null) {
          Store.clear()
-         this.hydrated = true
+         runInAction(() => (this.hydrated = true))
          return
       }
 
@@ -25,14 +26,13 @@ export class St {
       runInAction(() => (this.hydrated = true))
    }
 
-   identifier: string = ''
-   service: string = 'https://bsky.social'
-
    /** LOGIN */
+   identifier: string = ''
    password: string = ''
+   service: string = 'https://bsky.social'
    loginError?: string
-   async login(): Promise<string | undefined> {
-      this._api = new BskyAgent({
+   async login(toaster?: any) {
+      const api = new BskyAgent({
          service: this.service,
          persistSession: (evt, session) => {
             if (session != null) Store.set('session', session)
@@ -41,19 +41,16 @@ export class St {
 
       const session: AtpSessionData | null = Store.get('session')
       try {
-         if (session != null) {
-            await this._api.resumeSession(session)
-         } else {
-            const identifier = this.identifier.replace(/^@/, '')
-            await this._api.login({ identifier, password: this.password })
-            runInAction(() => (this.loginError = undefined))
-         }
+         if (session) await api.resumeSession(session)
+         else await api.login({ identifier: this.identifier.replace(/^@/, ''), password: this.password })
+         runInAction(() => (this.loginError = undefined))
       } catch (e: any) {
          console.log('❌ login/session resume failed:', e.message)
-         this.loginError = e.message
+         runInAction(() => (this.loginError = e.message))
          this.logout()
-         return this.loginError
+         void toaster?.push(<Notification type='error' header='error' closable children={e.message} />, { placement: 'bottomCenter', }) // prettier-ignore
       }
+      this._api = api
    }
 
    _api?: BskyAgent
@@ -73,14 +70,17 @@ export class St {
 
    /** UPLOAD */
    uploadError?: string
-   _persons: Person[] = []
+   private _persons?: Person[]
    onDrop = (e: React.DragEvent<HTMLElement>) => {
       e.preventDefault()
       const file = e.dataTransfer.files[0]!
       const reader = new FileReader()
       reader.onload = (e: ProgressEvent<FileReader>) => {
          const csvContent: string | ArrayBuffer | null | undefined = e.target?.result
-         if (typeof csvContent !== 'string') throw new Error('invalid file parse result')
+         if (typeof csvContent !== 'string') {
+            this.uploadError = '❌ cannot read file properly'
+            return
+         }
          this.loadCsv(csvContent)
       }
       reader.readAsText(file, 'UTF-8')
@@ -99,57 +99,30 @@ export class St {
             this.uploadError = `${importantErrors.length} errors in csv, see console`
          }
 
-         this._persons = res.data
-            .filter((d) => typeof d.id === 'string' && typeof d.username && 'string')
+         this._persons = res.data //
+            .filter((d) => typeof d.username === 'string' && d.username.trim()) // 🔶 this is the only required field, exclude invalid rows to prevent crash downstream
             .map((d) => new Person(this, d))
+         const invalidRows = res.data.length - this._persons.length
+         if (invalidRows > 0) this.uploadError = `${invalidRows} invalid rows (ie. no twitter username found)`
          Store.set('csvContent', csvContent)
+         this._persons.map((p) => p.profile) // 🔶 triggers data loading
       } catch (e: any) {
          this.uploadError = e.message
+         this._persons = undefined
+         Store.remove('csvContent')
       }
-
-      this._persons.map((p) => p.profile) // 🔶 triggers data loading
    }
 
    clearUpload() {
       Store.remove('csvContent')
-      this._persons = []
+      this._persons = undefined
+      this.uploadError = undefined
    }
 
-   get csvReady() { return this.rowsCount > 0 } // prettier-ignore
-   get rowsCount() { return this._persons.length || 0 } // prettier-ignore
-
-   /** FOLLOW */
-   get persons() {
-      console.log('🟢')
-      return this._persons.slice().sort((a, b) => a.twitterHandle.localeCompare(b.twitterHandle))
-   }
-
-   get initialLoadingCount() {
-      return this.persons.filter((p) => p.loading && !p.ready && !p.failed).length
-   }
-
-   get found() {
-      return this.persons.filter((p) => p.ready && p.initiallyFollowed === false)
-   }
-   get followed() {
-      return this.persons.filter((p) => p.ready && p.initiallyFollowed)
-   }
-   get notFound() {
-      return this.persons.filter((p) => p.failed === true)
-   }
-}
-
-export type TwtDataRow = {
-   id: string
-   username: string
-   name?: string
-   location?: string
-   url?: string
-   profile_image_url?: string
-   description?: string
-   verified?: string
-   verified_type?: string
-   followers_count?: string
-   following_count?: string
-   tweet_count?: string
+   get csvReady()     { return this._persons != null } // prettier-ignore
+   get persons()      { return this._persons?.slice().sort((a, b) => a.twitterHandle.localeCompare(b.twitterHandle)) ?? [] } // prettier-ignore
+   get loading()      { return this.persons.filter((p) => p.loading) } // prettier-ignore
+   get found()        { return this.persons.filter((p) => p.ready && p.initiallyFollowed === false) } // prettier-ignore
+   get followed()     { return this.persons.filter((p) => p.ready && p.initiallyFollowed) } // prettier-ignore
+   get notFound()     { return this.persons.filter((p) => p.notFound === true) } // prettier-ignore
 }

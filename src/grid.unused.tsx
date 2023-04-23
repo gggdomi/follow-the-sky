@@ -17,7 +17,7 @@ export const FollowingGrid = observer(function FollowingGrid_(p: {}) {
          style={{ minHeight: 800, height: '90vh' }}
          columns={columns}
          rows={st.persons}
-         rowKeyGetter={(row) => row.twitterId}
+         rowKeyGetter={(row) => row.twitterHandle}
          className={'rdg-light grid-wrapped grid-var-height'}
          rowHeight={undefined}
          enableVirtualization={false}
@@ -68,7 +68,7 @@ const columns_: Column<Person>[] = [
       name: 'Display Name',
       formatter: (val) => {
          if (val.row.loading) return <Loader />
-         if (val.row.failed) return '❌'
+         if (val.row.notFound) return '❌'
          return val.row.bskyDisplayName
       },
    },
