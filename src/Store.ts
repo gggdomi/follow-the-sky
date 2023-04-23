@@ -18,11 +18,5 @@ export class Store {
    }
 }
 
-export type StorageKeys =
-   | 'loggedIn'
-   | 'identifier'
-   | 'password'
-   | 'service'
-   | 'csvContent'
-   | `profile-${string}`
+export type StorageKeys = 'session' | 'csvContent' | `profile-${string}`
 const prefix = 'itfb-'

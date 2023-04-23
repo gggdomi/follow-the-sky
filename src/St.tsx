@@ -1,4 +1,4 @@
-import { BskyAgent } from '@atproto/api'
+import { AtpSessionData, BskyAgent } from '@atproto/api'
 import { makeAutoObservable, runInAction } from 'mobx'
 import Papa from 'papaparse'
 import { Person } from './Person'
@@ -12,15 +12,11 @@ export class St {
 
    hydrated: boolean = false
    async tryToHydrate() {
-      if (Store.get('loggedIn') !== true) {
+      if (Store.get('session') == null) {
          Store.clear()
          this.hydrated = true
          return
       }
-
-      this.identifier = Store.get('identifier') || ''
-      this.password = Store.get('password') || ''
-      this.service = Store.get('service') || this.service
 
       await this.login()
 
@@ -34,16 +30,26 @@ export class St {
 
    /** LOGIN */
    password: string = ''
-   rememberCredentials: boolean = true
    loginError?: string
    async login(): Promise<string | undefined> {
-      this._api = new BskyAgent({ service: this.service })
+      this._api = new BskyAgent({
+         service: this.service,
+         persistSession: (evt, session) => {
+            if (session != null) Store.set('session', session)
+         },
+      })
+
+      const session: AtpSessionData | null = Store.get('session')
       try {
-         const identifier = this.identifier // 🔶 remove trailing @
-         await this._api.login({ identifier, password: this.password })
-         runInAction(() => (this.loginError = undefined))
-         if (this.rememberCredentials) this.saveCredentialsLocally()
+         if (session != null) {
+            await this._api.resumeSession(session)
+         } else {
+            const identifier = this.identifier.replace(/^@/, '')
+            await this._api.login({ identifier, password: this.password })
+            runInAction(() => (this.loginError = undefined))
+         }
       } catch (e: any) {
+         console.log('❌ login/session resume failed:', e.message)
          this.loginError = e.message
          this.logout()
          return this.loginError
@@ -61,14 +67,8 @@ export class St {
 
    logout() {
       this._api = undefined
+      this.clearUpload()
       Store.clear()
-   }
-
-   saveCredentialsLocally() {
-      Store.set('identifier', this.identifier)
-      Store.set('password', this.password)
-      Store.set('service', this.service)
-      Store.set('loggedIn', true)
    }
 
    /** UPLOAD */
@@ -86,7 +86,7 @@ export class St {
       reader.readAsText(file, 'UTF-8')
    }
 
-   loadCsv = (csvContent: string | null) => {
+   loadCsv(csvContent: string | null) {
       this.uploadError = undefined
       if (!csvContent?.trim()) return
       try {
@@ -99,11 +99,15 @@ export class St {
             this.uploadError = `${importantErrors.length} errors in csv, see console`
          }
 
-         this._persons = res.data.map((d) => new Person(this, d))
+         this._persons = res.data
+            .filter((d) => typeof d.id === 'string' && typeof d.username && 'string')
+            .map((d) => new Person(this, d))
          Store.set('csvContent', csvContent)
       } catch (e: any) {
          this.uploadError = e.message
       }
+
+      this._persons.map((p) => p.profile) // 🔶 triggers data loading
    }
 
    clearUpload() {
@@ -116,21 +120,36 @@ export class St {
 
    /** FOLLOW */
    get persons() {
-      return this._persons.slice().sort((a, b) => a.order.localeCompare(b.order))
+      console.log('🟢')
+      return this._persons.slice().sort((a, b) => a.twitterHandle.localeCompare(b.twitterHandle))
+   }
+
+   get initialLoadingCount() {
+      return this.persons.filter((p) => p.loading && !p.ready && !p.failed).length
+   }
+
+   get found() {
+      return this.persons.filter((p) => p.ready && p.initiallyFollowed === false)
+   }
+   get followed() {
+      return this.persons.filter((p) => p.ready && p.initiallyFollowed)
+   }
+   get notFound() {
+      return this.persons.filter((p) => p.failed === true)
    }
 }
 
 export type TwtDataRow = {
    id: string
-   name: string
    username: string
-   location: string
-   url: string
-   profile_image_url: string
-   description: string
-   verified: string
-   verified_type: string
-   followers_count: string
-   following_count: string
-   tweet_count: string
+   name?: string
+   location?: string
+   url?: string
+   profile_image_url?: string
+   description?: string
+   verified?: string
+   verified_type?: string
+   followers_count?: string
+   following_count?: string
+   tweet_count?: string
 }

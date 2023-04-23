@@ -5,14 +5,20 @@ import { Store } from './Store'
 
 const ACTIVATE_BUTTONS = false
 
+const findHandle = (s: string | undefined) => {
+   if (s == null) return
+   const match = s.match(/@?(\S+(?:\.| dot )bsky(?:\.| dot )social)/)
+   if (match == null) return
+   return match[1].replaceAll(' dot ', '.')
+}
+
 export class Person {
    constructor(public st: St, private row: TwtDataRow) {
       makeAutoObservable(this)
    }
 
    get bskyHandle() {
-      // 🔶 TODO: extract from bio
-      return `${this.row.username}.bsky.social`
+      return findHandle(this.twitterDisplayName) ?? findHandle(this.twitterBio) ?? `${this.row.username}.bsky.social` // prettier-ignore
    }
 
    private _profile?: ProfileViewDetailed
@@ -38,6 +44,7 @@ export class Person {
                this.ready = true
                this.failed = false
                this.loading = false
+               this.initiallyFollowed = stored.viewer?.following != null
             }
          })
 
@@ -58,6 +65,7 @@ export class Person {
             this.ready = true
             this.failed = false
             this.loading = false
+            if (this.initiallyFollowed == null) this.initiallyFollowed = res.data.viewer?.following != null
             console.log('🟢 profile:', res.data)
             Store.set(`profile-${this.bskyHandle}`, this._profile)
          })
@@ -87,11 +95,14 @@ export class Person {
    get isFollowed() { return this.followedUri != null } // prettier-ignore
 
    followLoading = false
+   initiallyFollowed?: boolean
    async follow() {
       runInAction(() => (this.followLoading = true))
       if (ACTIVATE_BUTTONS) {
          const res = await this.st.api.follow(bang(this.did))
          console.log('🟢 follow:', res)
+      } else {
+         await sleep(2000)
       }
       runInAction(() => (this.followLoading = false))
       await this.reloadProfile()
@@ -113,21 +124,11 @@ export class Person {
       }
    }
 
-   get orderBit() {
-      if (this.ready) return 'a'
-      if (this.loading) return 'b'
-      if (this.failed) return 'd'
-      return 'c'
-   }
-
-   get order() {
-      return this.orderBit + this.bskyHandle
-   }
-
    /// TWITTER
    get twitterId() { return this.row.id } // prettier-ignore
    get twitterPfp() { return this.row.profile_image_url } // prettier-ignore
    get twitterHandle() { return this.row.username } // prettier-ignore
+   get twitterDisplayName() { return this.row.name ?? this.row.username } // prettier-ignore
    get twitterBio() { return this.row.description } // prettier-ignore
 }
 
@@ -135,3 +136,5 @@ export const bang = <T extends any>(val?: T | null | undefined): T => {
    if (val == null) throw new Error('value should not be null')
    return val
 }
+
+export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))

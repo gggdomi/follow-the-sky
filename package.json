@@ -10,6 +10,8 @@
    },
    "dependencies": {
       "@atproto/api": "^0.2.7",
+      "@fortawesome/free-brands-svg-icons": "^6.4.0",
+      "@rsuite/icons": "^1.0.2",
       "mobx": "^6.9.0",
       "mobx-react-lite": "^3.4.3",
       "papaparse": "^5.4.1",
