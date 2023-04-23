@@ -1,6 +1,4 @@
-import { Observer, observer } from 'mobx-react-lite'
-import type { Column } from 'react-data-grid'
-import DataGrid from 'react-data-grid'
+import { observer } from 'mobx-react-lite'
 import 'react-data-grid/lib/styles.css'
 import { Icon } from '@rsuite/icons'
 import {
@@ -29,7 +27,6 @@ import './App.css'
 import bskyIcon from './assets/bluesky.jpg'
 import { Person } from './Person'
 import { useSt } from './St.ctx'
-import { observableCols } from './grid.utils'
 import * as faTwitter from '@fortawesome/free-brands-svg-icons/faTwitter'
 
 const FaSvgIcon = ({ faIcon, ...rest }: any) => {
@@ -155,58 +152,6 @@ export const App = observer(function App_(p: {}) {
       </Container>
    )
 })
-
-const columns_: Column<Person>[] = [
-   {
-      key: 'actions',
-      name: 'Follow',
-      formatter: (val) => {
-         if (!val.row.ready) return
-         if (val.row.reloading) return <Loader />
-         if (val.row.followLoading) return <Loader color='blue' />
-
-         if (val.row.isFollowed)
-            return (
-               <Stack>
-                  <div>✅ Followed</div>
-                  <Button appearance='subtle' color='red' size='sm' onClick={() => val.row.unfollow()}>
-                     Unfollow
-                  </Button>
-               </Stack>
-            )
-         return (
-            <Button appearance='primary' color='green' size='sm' onClick={() => val.row.follow()}>
-               Follow
-            </Button>
-         )
-      },
-   },
-   {
-      key: 'twitterPfp',
-      name: 'Avatar',
-      formatter: (val) => <Avatar src={val.row.twitterPfp} alt={val.row.twitterBio} />,
-   },
-   { key: 'twitterHandle', name: 'Username' },
-   { key: 'twitterBio', name: 'Description' },
-   {
-      key: 'bskyPfp',
-      name: 'Avatar',
-      formatter: (val) => <Avatar src={val.row.bskyPfp} alt={val.row.bskyHandle} />,
-   },
-   { key: 'bskyHandle', name: 'Username' },
-   {
-      key: 'bskyDisplayName',
-      name: 'Display Name',
-      formatter: (val) => {
-         if (val.row.loading) return <Loader />
-         if (val.row.failed) return '❌'
-         return val.row.bskyDisplayName
-      },
-   },
-   { key: 'bskyBio', name: 'Description' },
-] // satisfies ({ key: keyof Person | 'actions' } & Record<string, unknown>)[] // 🔶
-
-const columns = observableCols(columns_)
 
 export const FollowingList = observer(function FollowingList_() {
    const st = useSt()
@@ -344,21 +289,6 @@ export const FollowButton = observer(function FollowButton_(p: { person: Person 
       <Button appearance='primary' color='blue' onClick={() => p.person.follow()}>
          Follow on Bluesky
       </Button>
-   )
-})
-
-export const FollowingGrid = observer(function FollowingGrid_(p: {}) {
-   const st = useSt()
-   return (
-      <DataGrid
-         style={{ minHeight: 800, height: '90vh' }}
-         columns={columns}
-         rows={st.persons}
-         rowKeyGetter={(row) => row.twitterId}
-         className={'rdg-light grid-wrapped grid-var-height'}
-         rowHeight={undefined}
-         enableVirtualization={false}
-      />
    )
 })
 
