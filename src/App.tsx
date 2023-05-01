@@ -1,12 +1,29 @@
 import { observer } from 'mobx-react-lite'
+import * as faGithub from '@fortawesome/free-brands-svg-icons/faGithub'
 import 'react-data-grid/lib/styles.css'
-import { Container, Content, FlexboxGrid, Grid, Footer, Header, Loader, Stack, Col, Row, Panel } from 'rsuite'
+import {
+   Container,
+   Content,
+   Grid,
+   Footer,
+   Header,
+   Loader,
+   Stack,
+   Col,
+   Row,
+   Panel,
+   IconButton,
+   Button,
+} from 'rsuite'
 import 'rsuite/dist/rsuite.min.css'
 import './App.css'
 import { useSt } from './St.ctx'
 import { Login } from './LoginForm'
 import { Upload } from './Upload'
 import { Follow } from './Follow'
+import { repoURL } from './St'
+import { FaSvgIcon } from './utils'
+import { Icon } from '@rsuite/icons'
 
 export const App = observer(function App_(p: {}) {
    const st = useSt()
@@ -42,13 +59,31 @@ export const App = observer(function App_(p: {}) {
                </Grid>
 
                <Stack direction='column'>
-                  <h3>3. Check who has joined Bluesky and re-follow them</h3>
+                  <h3>
+                     3. Check who has joined Bluesky and re-follow them
+                     {st.loading.length > 0 ? (
+                        <Button style={{ marginLeft: 10 }}>
+                           <Loader style={{ marginRight: 10 }} /> {st.loading.length} profiles loading...
+                        </Button>
+                     ) : null}
+                  </h3>
                   <Follow />
                </Stack>
             </Stack>
          </Content>
-         <Footer style={{ height: 20, marginBottom: 20 }}>
-            <Stack justifyContent='center'>Footer</Stack>
+         <Footer style={{ marginBottom: 20 }}>
+            <Stack justifyContent='center'>
+               <span>MIT License</span>
+               <IconButton
+                  as='a'
+                  href={repoURL}
+                  target='_blank'
+                  style={{ color: '#aaa' }}
+                  appearance='subtle'
+                  // @ts-ignore
+                  icon={<Icon as={FaSvgIcon} faIcon={faGithub} />}
+               />
+            </Stack>
          </Footer>
       </Container>
    )

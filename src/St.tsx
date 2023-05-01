@@ -31,7 +31,9 @@ export class St {
    password: string = ''
    service: string = 'https://bsky.social'
    loginError?: string
+   loginLoading = false
    async login(toaster?: any) {
+      this.loginLoading = true
       const api = new BskyAgent({
          service: this.service,
          persistSession: (evt, session) => {
@@ -49,8 +51,11 @@ export class St {
          runInAction(() => (this.loginError = e.message))
          this.logout()
          void toaster?.push(<Notification type='error' header='error' closable children={e.message} />, { placement: 'bottomCenter', }) // prettier-ignore
+      } finally {
+         this.loginLoading = false
       }
       this._api = api
+      this.tryToTriggerDataLoading()
    }
 
    _api?: BskyAgent
@@ -69,16 +74,14 @@ export class St {
    }
 
    /** UPLOAD */
-   uploadError?: string
+   uploadError: string[] = []
    private _persons?: Person[]
-   onDrop = (e: React.DragEvent<HTMLElement>) => {
-      e.preventDefault()
-      const file = e.dataTransfer.files[0]!
+   handleFile = (file: File) => {
       const reader = new FileReader()
       reader.onload = (e: ProgressEvent<FileReader>) => {
          const csvContent: string | ArrayBuffer | null | undefined = e.target?.result
          if (typeof csvContent !== 'string') {
-            this.uploadError = '❌ cannot read file properly'
+            this.uploadError = ['cannot read file properly']
             return
          }
          this.loadCsv(csvContent)
@@ -87,36 +90,43 @@ export class St {
    }
 
    loadCsv(csvContent: string | null) {
-      this.uploadError = undefined
+      this.uploadError = []
       if (!csvContent?.trim()) return
       try {
-         const res = Papa.parse<TwtDataRow>(csvContent.trim(), { header: true, delimiter: ',' })
+         const res = Papa.parse<TwtDataRow>(csvContent.trim(), { header: true })
 
          // csv from twtdata doesn't completely fill the rows if no pinned tweet 🤷🏻‍♂️
          const importantErrors = res.errors.filter((e) => e.code !== 'TooFewFields')
          if (importantErrors.length > 0) {
             console.log('❌ errors during parsing:', importantErrors)
-            this.uploadError = `${importantErrors.length} errors in csv, see console`
+            this.uploadError.push(`${importantErrors.length} errors parsing csv, see console for details`)
          }
 
          this._persons = res.data //
             .filter((d) => typeof d.username === 'string' && d.username.trim()) // 🔶 this is the only required field, exclude invalid rows to prevent crash downstream
             .map((d) => new Person(this, d))
          const invalidRows = res.data.length - this._persons.length
-         if (invalidRows > 0) this.uploadError = `${invalidRows} invalid rows (ie. no twitter username found)`
+         if (invalidRows > 0)
+            this.uploadError.push(
+               `No twitter username found in ${invalidRows} rows. Is the file format correct?`,
+            )
          Store.set('csvContent', csvContent)
-         this._persons.map((p) => p.profile) // 🔶 triggers data loading
+         this.tryToTriggerDataLoading()
       } catch (e: any) {
-         this.uploadError = e.message
+         this.uploadError.push(e.message)
          this._persons = undefined
          Store.remove('csvContent')
       }
    }
 
+   tryToTriggerDataLoading() {
+      this._persons?.map((p) => p.profile)
+   }
+
    clearUpload() {
       Store.remove('csvContent')
       this._persons = undefined
-      this.uploadError = undefined
+      this.uploadError = []
    }
 
    get csvReady()     { return this._persons != null } // prettier-ignore
@@ -126,3 +136,5 @@ export class St {
    get followed()     { return this.persons.filter((p) => p.ready && p.initiallyFollowed) } // prettier-ignore
    get notFound()     { return this.persons.filter((p) => p.notFound === true) } // prettier-ignore
 }
+
+export const repoURL = 'https://github.com/gggdomi/import-twitter-following-bluesky'

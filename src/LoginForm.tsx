@@ -2,6 +2,7 @@ import { observer } from 'mobx-react-lite'
 import { Button, ButtonToolbar, Form, Panel, Stack, Tooltip, Whisper, useToaster } from 'rsuite'
 import { useSt } from './St.ctx'
 import ExitIcon from '@rsuite/icons/Exit'
+import { repoURL } from './St'
 
 export const Login = observer(function LoginForm_(p: {}) {
    const st = useSt()
@@ -61,10 +62,7 @@ export const Login = observer(function LoginForm_(p: {}) {
                            <br />
                            <br />
                            To be even more certain, please{' '}
-                           <a
-                              href='https://github.com/gggdomi/import-twitter-following-bluesky'
-                              target='__blank'
-                           >
+                           <a href={repoURL} target='__blank'>
                               check the source code
                            </a>{' '}
                            (or even run the code locally)
@@ -90,6 +88,7 @@ export const Login = observer(function LoginForm_(p: {}) {
                      disabled={!st.canLogin}
                      type='submit'
                      block
+                     loading={st.loginLoading}
                   >
                      Login
                   </Button>

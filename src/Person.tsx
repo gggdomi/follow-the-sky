@@ -5,13 +5,17 @@ import { Store } from './Store'
 import { bang, findHandle, sleep } from './utils'
 
 export class Person {
-   ACTIVATE_BUTTONS = false // 🔶 quick way to debug UI without following/unfollowing people for real and spamming their notifications
+   ACTIVATE_BUTTONS = true // 🔶 quick way to debug UI without following/unfollowing people for real and spamming their notifications
    constructor(public st: St, private twitterData: TwtDataRow) {
       makeAutoObservable(this)
    }
 
    get bskyHandle() {
-      return findHandle(this.twitterDisplayName) ?? findHandle(this.twitterBio) ?? `${this.twitterHandle}.bsky.social` // prettier-ignore
+      return (
+         findHandle(this.twitterDisplayName) ??
+         findHandle(this.twitterBio) ??
+         `${this.twitterHandle}.bsky.social`.replaceAll('_', '') // _ is allowed in Twitter but not in Bluesky handles
+      )
    }
 
    private _profile?: ProfileViewDetailed
@@ -23,6 +27,7 @@ export class Person {
       if (this.ready) return this._profile
       if (this.notFound) return undefined
       if (this.loading) return undefined
+      if (!this.st.loggedIn) return undefined
 
       const stored = Store.get(`profile-${this.bskyHandle}`) as ProfileViewDetailed | 'NOT_FOUND' | null
       if (stored != null) {
@@ -67,7 +72,9 @@ export class Person {
             this.notFound = true
             this.ready = false
             this.loading = false
-            Store.set(`profile-${this.bskyHandle}`, 'NOT_FOUND')
+            if (e.message === 'Profile not found' && e.status === 400) {
+               Store.set(`profile-${this.bskyHandle}`, 'NOT_FOUND')
+            }
          })
       }
    }
@@ -91,7 +98,7 @@ export class Person {
    async follow() {
       runInAction(() => (this.followLoading = true))
       if (this.ACTIVATE_BUTTONS) await this.st.api.follow(bang(this.did))
-      else await sleep(2000)
+      else await sleep(600)
       runInAction(() => (this.followLoading = false))
       await this.reloadProfile()
    }
