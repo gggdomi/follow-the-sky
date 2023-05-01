@@ -1,11 +1,14 @@
 {
    "name": "import-twitter-following-bluesky",
+   "homepage": "https://gggdomi.github.io/import-twitter-following-bluesky",
    "private": true,
    "version": "0.0.0",
    "type": "module",
    "scripts": {
       "dev": "vite",
       "build": "tsc && vite build",
+      "predeploy": "yarn build",
+      "deploy": "gh-pages -d dist",
       "preview": "vite preview"
    },
    "dependencies": {
@@ -29,6 +32,7 @@
       "@vitejs/plugin-react-swc": "^3.0.0",
       "eslint": "^8.38.0",
       "eslint-config-prettier": "^8.8.0",
+      "gh-pages": "^5.0.0",
       "prettier": "^2.8.7",
       "typescript": "^5.0.4",
       "vite": "^4.2.0"
