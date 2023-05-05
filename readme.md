@@ -1,8 +1,10 @@
-# import-twitter-following-bluesky
+# Follow The Sky ➡️
+
+Twitter -> Bluesky following list importer.
 
 You follow people on Twitter. You want to follow them on Bluesky. It's tedious to do manually. This is a simple tool to make the process more convenient.
 
-Live version: [https://gggdomi.github.io/import-twitter-following-bluesky](https://gggdomi.github.io/import-twitter-following-bluesky)
+Live version: [https://gggdomi.github.io/follow-the-sky](https://gggdomi.github.io/follow-the-sky)
 
 ![Screenshot](./public/screenshot.png)
 

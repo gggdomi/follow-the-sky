@@ -32,7 +32,7 @@ export const App = observer(function App_(p: {}) {
    return (
       <Container>
          <Header style={{ margin: '20px 0', textAlign: 'center' }}>
-            <h1>Twitter ➡️ Bluesky</h1>
+            <h1>Follow The Sky ➡️ </h1>
             <h4>Find again in Bluesky people you follow on Twitter</h4>
          </Header>
          <Content>

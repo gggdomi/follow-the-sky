@@ -137,4 +137,4 @@ export class St {
    get notFound()     { return this.persons.filter((p) => p.notFound === true) } // prettier-ignore
 }
 
-export const repoURL = 'https://github.com/gggdomi/import-twitter-following-bluesky'
+export const repoURL = 'https://github.com/gggdomi/follow-the-sky'
